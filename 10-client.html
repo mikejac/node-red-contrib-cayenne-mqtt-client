@@ -1,0 +1,640 @@
+<!--
+
+ Copyright (c) 2016 Michael Jacobsen (github.com/mikejac)
+ 
+ This file is part of Node-RED Cayenne MQTT.
+ 
+ Node-RED Cayenne MQTT is free software: you can redistribute 
+ it and/or modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation, either version 3 of the
+ License, or (at your option) any later version.
+ 
+ Node-RED Cayenne MQTT is distributed in the hope that it will
+ be useful, but WITHOUT ANY WARRANTY; without even the implied warranty 
+ of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with Node-RED Cayenne MQTT.  If not, see <http://www.gnu.org/licenses/>.
+ 
+-->
+
+<!--
+    Actuator with 'manual' feedback to Cayenne
+-->
+<script type="text/x-red" data-template-name="cayenne actuator-feedback">
+    <div class="form-row">
+        <label for="node-input-client"><i class="fa fa-globe"></i> <span data-i18n="cayenne.label.cayenne-client"></span></label>
+        <input type="text" id="node-input-client">
+    </div>
+    <div class="form-row">
+        <label for="node-input-qos"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.qos"></span></label>
+        <select id="node-input-qos" style="width:125px !important">
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="cayenne.label.name"></span></label>
+        <input type="text" id="node-input-name" data-i18n="[placeholder]cayenne.label.name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-datatype"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.datatype"></span></label>
+        <input type="text" id="node-input-datatype">
+    </div>
+    <div class="form-row">
+        <label for="node-input-dataunit"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.dataunit"></span></label>
+        <input type="text" id="node-input-dataunit">
+    </div>
+    <div class="form-row">
+        <label for="node-input-channel"><i class="fa fa-tag"></i> <span data-i18n="cayenne.label.channel"></span></label>
+        <input type="text" id="node-input-channel" data-i18n="[placeholder]cayenne.label.channel">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="cayenne actuator-feedback">
+    <p>Cayenne Actuator with manual feedback<p>
+    <p>For more information about Cayenne see the <a href="http://www.cayenne-mydevices.com/" target="_blank">Cayenne</a> site.</p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('cayenne actuator-feedback',{
+        category: 'function',
+        defaults: {
+            client: {type:"cayenne-client", required:true},
+            qos: {value:"0"},
+            name: {value:""},
+            datatype: {value:""},
+            dataunit: {value:""},
+            channel: {value:"", required:true, validate: RED.validators.regex(/^(#$|(\+|[^+#]*)(\/(\+|[^+#]*))*(\/(\+|#|[^+#]*))?$)/)},
+            datatypeEx: {value:"_none_"},
+            dataunitEx: {value:"_none_"},
+            valuetypeEx: {value:"digital"}
+        },
+        color:"#4286f4",
+        inputs:1,
+        outputs:1,
+        icon: "bridge.png",
+        align: "left",
+        label: function() {
+            return this.name||"cayenne actuator";
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
+        },
+        oneditprepare: function() {
+            //console.log("oneditprepare(1): this = ", this)
+
+            if (typeof this.qos === 'undefined') {
+                $("#node-input-qos").val("0");
+            }
+
+            if (typeof this.datatypeEx === 'undefined') {
+                this.datatypeEx = "_none_"
+                this.dataunitEx = "_none_"
+                console.log("oneditprepare(): datatype blank")
+            }
+
+            if (typeof this.dataunitEx === 'undefined') {
+                this.dataunitEx = "_none_"
+                console.log("oneditprepare(): dataunit blank")
+            }
+
+            console.log("oneditprepare(): datatype = ", this.datatypeEx)
+            console.log("oneditprepare(): dataunit = ", this.dataunitEx)
+
+            $("#node-input-datatype").typedInput({
+                default: this.datatypeEx,
+                types:   getActuatorTypes()
+            })
+
+            $("#node-input-dataunit").typedInput({
+                default: this.dataunitEx,
+                types:   findActuatorDataUnit(this.datatypeEx).units
+            })
+
+            $("#node-input-datatype").on("change", function(type, value) {
+                console.log("oneditprepare(): change; value = ", value) 
+
+                updateDataUnit(value)
+            })
+
+            function updateDataUnit(datatype) {
+                console.log("updateDataUnit(): datatype =", datatype)
+                
+                if (typeof datatype === 'undefined') {
+                    return
+                }
+
+                var d = findActuatorDataUnit(datatype)
+                console.log("updateDataUnit(): d =", d)
+
+                $("#node-input-dataunit").typedInput('types', d.units)
+                $("#node-input-dataunit").typedInput('type',  d.defUnit)
+            }
+        },
+        oneditsave: function() {
+            var datatype = $("#node-input-datatype").typedInput('type')
+            var dataunit = $("#node-input-dataunit").typedInput('type')
+
+            var d = findActuatorDataUnit(datatype)
+
+            this.datatypeEx  = datatype
+            this.dataunitEx  = dataunit
+            this.valuetypeEx = d.valuetype
+ 
+            console.log("oneditsave(): this =", this)
+        }
+    });
+</script>
+
+<!--
+    Actuator with 'automatic' feedback to Cayenne
+-->
+<script type="text/x-red" data-template-name="cayenne actuator">
+    <div class="form-row">
+        <label for="node-input-client"><i class="fa fa-globe"></i> <span data-i18n="cayenne.label.cayenne-client"></span></label>
+        <input type="text" id="node-input-client">
+    </div>
+    <div class="form-row">
+        <label for="node-input-qos"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.qos"></span></label>
+        <select id="node-input-qos" style="width:125px !important">
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="cayenne.label.name"></span></label>
+        <input type="text" id="node-input-name" data-i18n="[placeholder]cayenne.label.name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-datatype"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.datatype"></span></label>
+        <input type="text" id="node-input-datatype">
+    </div>
+    <div class="form-row">
+        <label for="node-input-dataunit"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.dataunit"></span></label>
+        <input type="text" id="node-input-dataunit">
+    </div>
+    <div class="form-row">
+        <label for="node-input-channel"><i class="fa fa-tag"></i> <span data-i18n="cayenne.label.channel"></span></label>
+        <input type="text" id="node-input-channel" data-i18n="[placeholder]cayenne.label.channel">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="cayenne actuator">
+    <p>Cayenne Actuator with automatic feedback<p>
+    <p>For more information about Cayenne see the <a href="http://www.cayenne-mydevices.com/" target="_blank">Cayenne</a> site.</p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('cayenne actuator',{
+        category: 'input',
+        defaults: {
+            client: {type:"cayenne-client", required:true},
+            qos: {value:"0"},
+            name: {value:""},
+            datatype: {value:""},
+            dataunit: {value:""},
+            channel: {value:"", required:true, validate: RED.validators.regex(/^(#$|(\+|[^+#]*)(\/(\+|[^+#]*))*(\/(\+|#|[^+#]*))?$)/)},
+            datatypeEx: {value:"_none_"},
+            dataunitEx: {value:"_none_"},
+            valuetypeEx: {value:"digital"}
+        },
+        color:"#4286f4",
+        inputs:0,
+        outputs:1,
+        icon: "bridge.png",
+        align: "left",
+        label: function() {
+            return this.name||"cayenne actuator";
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
+        },
+        oneditprepare: function() {
+            //console.log("oneditprepare(1): this = ", this)
+            if (typeof this.qos === 'undefined') {
+                $("#node-input-qos").val("0");
+            }
+
+            if (typeof this.datatypeEx === 'undefined') {
+                this.datatypeEx = "_none_"
+                this.dataunitEx = "_none_"
+                console.log("oneditprepare(): datatype blank")
+            }
+
+            if (typeof this.dataunitEx === 'undefined') {
+                this.dataunitEx = "_none_"
+                console.log("oneditprepare(): dataunit blank")
+            }
+
+            console.log("oneditprepare(): datatype = ", this.datatypeEx)
+            console.log("oneditprepare(): dataunit = ", this.dataunitEx)
+
+            $("#node-input-datatype").typedInput({
+                default: this.datatypeEx,
+                types:   getActuatorTypes()
+            })
+
+            $("#node-input-dataunit").typedInput({
+                default: this.dataunitEx,
+                types:   findActuatorDataUnit(this.datatypeEx).units
+            })
+
+            $("#node-input-datatype").on("change", function(type, value) {
+                //console.log("oneditprepare(): change; value = ", value) 
+                //console.log("oneditprepare(): change; datatypes  = ", datatypes)
+
+                updateDataUnit(value)
+            })
+
+            function updateDataUnit(datatype) {
+                //console.log("updateDataUnit(): datatype = ", datatype)
+                if (typeof datatype === 'undefined') {
+                    return
+                }
+
+                var d = findActuatorDataUnit(datatype)
+
+                $("#node-input-dataunit").typedInput('types', d.units)
+                $("#node-input-dataunit").typedInput('type',  d.defUnit)
+
+                this.valuetypeEx = d.valuetype
+            }
+        },
+        oneditsave: function() {
+            var datatype = $("#node-input-datatype").typedInput('type')
+            var dataunit = $("#node-input-dataunit").typedInput('type')
+
+            var d = findActuatorDataUnit(datatype)
+
+            this.datatypeEx  = datatype
+            this.dataunitEx  = dataunit
+            this.valuetypeEx = d.valuetype
+ 
+            console.log("oneditsave(): this =", this)
+        }
+    });
+</script>
+
+<!--
+    Sensor
+-->
+<script type="text/x-red" data-template-name="cayenne sensor">
+    <div class="form-row">
+        <label for="node-input-client"><i class="fa fa-globe"></i> <span data-i18n="cayenne.label.cayenne-client"></span></label>
+        <input type="text" id="node-input-client">
+    </div>
+    <div class="form-row">
+        <label for="node-input-qos"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.qos"></span></label>
+        <select id="node-input-qos" style="width:125px !important">
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="cayenne.label.name"></span></label>
+        <input type="text" id="node-input-name" data-i18n="[placeholder]cayenne.label.name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-datatype"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.datatype"></span></label>
+        <input type="text" id="node-input-datatype">
+    </div>
+    <div class="form-row">
+        <label for="node-input-dataunit"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.dataunit"></span></label>
+        <input type="text" id="node-input-dataunit">
+    </div>
+    <div class="form-row">
+        <label for="node-input-channel"><i class="fa fa-tag"></i> <span data-i18n="cayenne.label.channel"></span></label>
+        <input type="text" id="node-input-channel" data-i18n="[placeholder]cayenne.label.channel">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="cayenne sensor">
+    <p>Cayenne Sensor<p>
+    <p>For more information about Cayenne see the <a href="http://www.cayenne-mydevices.com/" target="_blank">Cayenne</a> site.</p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('cayenne sensor',{
+        category: 'output',
+        defaults: {
+            client: {type:"cayenne-client", required:true},
+            qos: {value:"0"},
+            name: {value:""},
+            datatype: {value:""},
+            dataunit: {value:""},
+            channel: {value:"", validate: RED.validators.regex(/^(#$|(\+|[^+#]*)(\/(\+|[^+#]*))*(\/(\+|#|[^+#]*))?$)/)},
+            datatypeEx: {value:"_none_"},
+            dataunitEx: {value:"_none_"}
+        },
+        color:"#4286f4",
+        inputs:1,
+        outputs:0,
+        icon: "bridge.png",
+        align: "right",
+        label: function() {
+            return this.name||"cayenne sensor";
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
+        },
+        oneditprepare: function() {
+            //console.log("oneditprepare(1): this = ", this)
+            if (typeof this.qos === 'undefined') {
+                $("#node-input-qos").val("0");
+            }
+
+            if (typeof this.datatypeEx === 'undefined') {
+                this.datatypeEx = "_none_"
+                this.dataunitEx = "_none_"
+                console.log("oneditprepare(): datatype blank")
+            }
+
+            if (typeof this.dataunitEx === 'undefined') {
+                this.dataunitEx = "_none_"
+                console.log("oneditprepare(): dataunit blank")
+            }
+
+            console.log("oneditprepare(): datatype = ", this.datatypeEx)
+            console.log("oneditprepare(): dataunit = ", this.dataunitEx)
+
+            $("#node-input-datatype").typedInput({
+                default: this.datatypeEx,
+                types:   getSensorTypes()
+            })
+
+            $("#node-input-dataunit").typedInput({
+                default: this.dataunitEx,
+                types:   findSensorDataUnit(this.datatypeEx).units
+            })
+
+            $("#node-input-datatype").on("change", function(type, value) {
+                //console.log("oneditprepare(): change; value = ", value) 
+                //console.log("oneditprepare(): change; datatypes  = ", datatypes)
+
+                updateDataUnit(value)
+            })
+
+            function updateDataUnit(datatype) {
+                //console.log("updateDataUnit(): datatype = ", datatype)
+                if (typeof datatype === 'undefined') {
+                    return
+                }
+
+                var d = findSensorDataUnit(datatype)
+
+                $("#node-input-dataunit").typedInput('types', d.units);
+                $("#node-input-dataunit").typedInput('type',  d.defUnit);
+            }
+        },
+        oneditsave: function() {
+            var datatype = $("#node-input-datatype").typedInput('type')
+            var dataunit = $("#node-input-dataunit").typedInput('type')
+
+            this.datatypeEx = datatype
+            this.dataunitEx = dataunit
+
+            console.log("oneditsave(): this =", this)
+        }
+    });
+</script>
+
+<!--
+    Configuration Node
+-->
+<script type="text/x-red" data-template-name="cayenne-client">
+    <div class="form-row">
+        <label for="node-config-input-broker"><i class="fa fa-globe"></i> <span data-i18n="cayenne.label.broker"></span></label>
+        <input type="text" id="node-config-input-broker">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-username"><i class="fa fa-tag"></i> <span data-i18n="cayenne.label.username"></span></label>
+        <input type="text" id="node-config-input-username" data-i18n="[placeholder]cayenne.placeholder.username">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-clientid"><i class="fa fa-tag"></i> <span data-i18n="cayenne.label.clientid"></span></label>
+        <input type="text" id="node-config-input-clientid" data-i18n="[placeholder]cayenne.placeholder.clientid">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="fa fa-tag"></i> <span data-i18n="cayenne.label.name"></span></label>
+        <input type="text" id="node-config-input-name" data-i18n="[placeholder]cayenne.label.name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="cayenne-client">
+    <p>Cayenne Client - configuration<p>
+    <p>For more information about Cayenne see the <a href="http://www.cayenne-mydevices.com/" target="_blank">Cayenne</a> site.</p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('cayenne-client', {
+        category: 'config',
+        defaults: {
+            broker: {type:"mqtt-broker", required:true},
+            username: {value:"", required:true},
+            clientid: {value:"", required:true},
+            name: {value:""}
+        },
+        color:"#4286f4",
+        icon: "bridge.png",
+        label: function() {
+            return this.name||"cayenne-client";
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
+        }
+    });
+</script>
+
+<!--
+    helpers/common
+-->
+<script type="text/javascript">
+    var actuatorTypes = [
+        {
+            value:"_none_",
+            label:"None",
+            hasValue:false,
+            units: [
+                {value:"_none_",    label:"None", hasValue:false}
+            ],
+            valuetype: "digital",
+            defUnit:"_none_"
+        },
+        {
+            value:"hvac_temp",
+            label:"HVAC.Change Temperature",
+            hasValue:false,
+            units: [
+                {value:"f",         label:"Fahrenheit", hasValue:false},
+                {value:"c",         label:"Celsius", hasValue:false}
+            ],
+            valuetype: "analog",
+            defUnit:"c"
+        },
+        {
+            value:"lt_switch_act",
+            label:"Light Switch",
+            hasValue:false,
+            units: [
+                {value:"_null1",    label:"Off/On", hasValue:false},
+                {value:"d",         label:"Digital (0/1)", hasValue:false},
+                {value:"_null2",    label:"Low/High", hasValue:false}
+            ],
+            valuetype: "digital",
+            defUnit:"d"
+        },
+        {
+            value:"switch",
+            label:"Switch",
+            hasValue:false,
+            units: [
+                {value:"_null1",    label:"Off/On", hasValue:false},
+                {value:"d",         label:"Digital (0/1)", hasValue:false},
+                {value:"_null2",    label:"Low/High", hasValue:false}
+            ],
+            valuetype: "digital",
+            defUnit:"d"
+        }
+    ]
+
+    function getActuatorTypes() {
+        return actuatorTypes
+    }
+
+    function findActuatorDataUnit(datatype) {
+        console.log("findActuatorDataUnit(global): datatype =", datatype)
+
+        for (i = 0, len = actuatorTypes.length; i < len; i++) { 
+            console.log("findActuatorDataUnit(global): datatypes[i] =", actuatorTypes[i])
+            if (datatype == actuatorTypes[i].value) {
+                return actuatorTypes[i]
+            }
+        }
+
+        console.log("findActuatorDataUnit(global): datatype not found!")
+
+        return actuatorTypes[0]
+    }
+
+    var sensorTypes = [
+        {
+            value:"_none_",
+            label:"None",
+            hasValue:false,
+            units: [
+                {value:"_none_",   label:"None", hasValue:false}
+            ],
+            defUnit:"_none_"
+        },
+        {
+            value:"bp",
+            label:"Barometric pressure",
+            hasValue:false,
+            units: [
+                {value:"pa",        label:"Pascal", hasValue:false},
+                {value:"hpa",       label:"Hecto Pascal", hasValue:false}
+            ],
+            defUnit:"hpa"
+        },
+        {
+            value:"color",
+            label:"Color",
+            hasValue:false,
+            units: [
+                {value:"rgb",       label:"RGB", hasValue:false},
+                {value:"cmyk",      label:"CYMK", hasValue:false},
+                {value:"hex",       label:"Hexadecimal", hasValue:false}
+            ],
+            defUnit:"rgb"
+        },
+        {
+            value:"intrusion",
+            label:"Intrusion",
+            hasValue:false,
+            units: [
+                {value:"d",         label:"Digital (0/1)", hasValue:false}
+            ],
+            defUnit:"d"
+        },
+        {
+            value:"lighting_sense",
+            label:"Lighting",           
+            hasValue:false,
+            units: [
+                {value:"p",         label:"% (0 to 100)", hasValue:false},
+                {value:"lux",       label:"Lux", hasValue:false},
+                {value:"v",         label:"Volts", hasValue:false},
+                {value:"r",         label:"Ratio", hasValue:false}
+            ],
+            defUnit:"lux"
+        },
+        {
+            value:"lux",
+            label:"Luminosity",           
+            hasValue:false,
+            units: [
+                {value:"p",         label:"% (0 to 100)", hasValue:false},
+                {value:"lux",       label:"Lux", hasValue:false},
+                {value:"v",         label:"Volts", hasValue:false},
+                {value:"r",         label:"Ratio", hasValue:false}
+            ],
+            defUnit:"lux"
+        },
+        {
+            value:"motion",
+            label:"Motion",
+            hasValue:false,
+            units: [
+                {value:"d",         label:"Digital (0/1)", hasValue:false}
+            ],
+            defUnit:"d"
+        },
+        {
+            value:"rel_hum",
+            label:"Relative Humidity",
+            hasValue:false,
+            units: [
+                {value:"rel_hum",   label:"Relative Humidity", hasValue:false}
+            ],
+            defUnit:"rel_hum"
+        },
+        {
+            value:"temp",
+            label:"Temperature",
+            hasValue:false,
+            units: [
+                {value:"f",         label:"Fahrenheit", hasValue:false},
+                {value:"c",         label:"Celsius", hasValue:false},
+                {value:"k",         label:"Kelvin", hasValue:false},
+                {value:"v",         label:"Volts", hasValue:false},
+                {value:"p",         label:"% (0 to 100)", hasValue:false},
+                {value:"r",         label:"Ratio", hasValue:false}
+            ],
+            defUnit:"c"
+        }
+    ]
+
+    function getSensorTypes() {
+        return sensorTypes
+    }
+
+    function findSensorDataUnit(datatype) {
+        console.log("findSensorDataUnit(global): datatype =", datatype)
+
+        for (i = 0, len = sensorTypes.length; i < len; i++) { 
+            console.log("findSensorDataUnit(global): datatypes[i] =", sensorTypes[i])
+            if (datatype == sensorTypes[i].value) {
+                return sensorTypes[i]
+            }
+        }
+
+        console.log("findSensorDataUnit(global): datatype not found!")
+
+        return sensorTypes[0]
+    }
+</script>

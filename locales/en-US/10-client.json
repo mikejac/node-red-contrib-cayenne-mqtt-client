@@ -1,0 +1,25 @@
+{
+    "cayenne": {
+        "label": {
+            "broker": "Server",
+            "name": "Name",
+            "username": "Cayenne MQTT Username",
+            "clientid": "Cayenne Client ID",
+            "cayenne-client": "Cayenne Client",
+            "datatype": "Data Type",
+            "dataunit": "Data Unit",
+            "channel": "Channel",
+            "qos": "QoS"
+        },
+        "placeholder": {
+            "username": "Provided by Cayenne",
+            "clientid": "Provided by Cayenne",
+            "channel": "Cayenne channel name"
+        },
+        "errors": {
+            "missing-config": "Missing broker configuration",
+            "invalid-value-type": "Invalid value type",
+            "invalid-topic": "Invalid topic specified"
+        }
+    }
+}

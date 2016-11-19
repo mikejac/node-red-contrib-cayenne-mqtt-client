@@ -1,0 +1,24 @@
+{
+    "name"         : "node-red-contrib-cayenne-mqtt-client",
+    "version"      : "0.0.1",
+    "description"  : "Cayenne MQTT Interface",
+    "homepage"     : "https://github.com/mikejac/node-red-contrib-cayenne-mqtt-client",
+    "scripts": {},
+    "dependencies": {
+    },
+    "keywords"     : [ 
+                       "mqtt",
+                       "cayenne" 
+                     ],
+    "node-red"     : {
+        "nodes": {
+            "client": "10-client.js"
+        }
+    },
+    "repository": {
+        "type"     : "git",
+        "url"      : "git@github.com:mikejac/node-red-contrib-cayenne-mqtt-client.git"
+    },
+    "author"       : "github.com/mikejac",
+    "license"      : "GPLv3"
+}
