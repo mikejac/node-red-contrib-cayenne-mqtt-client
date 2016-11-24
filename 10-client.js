@@ -41,19 +41,15 @@ module.exports = function(RED) {
         this.valuetype  = config.valuetypeEx
 
         this.client     = config.client
-        this.clientConn = RED.nodes.getNode(this.client)
+        this.clientConn = RED.nodes.getNode(this.client)    // the configuration
 
-        //console.log("CayenneSensorNode(): this.clientConn =", this.clientConn)
-        
         this.broker     = this.clientConn.broker
-        this.brokerConn = RED.nodes.getNode(this.broker)
-
-        //console.log("CayenneSensorNode(): this.brokerConn =", this.brokerConn)
+        this.brokerConn = RED.nodes.getNode(this.broker)    // the MQTT broker
 
         var node = this
 
         if (this.brokerConn) {
-            this.status({fill:"red",shape:"ring",text:"node-red:common.status.disconnected"})
+            updateNodeStatus(this, false)
 
             if (this.channel) {
                 //
@@ -66,7 +62,7 @@ module.exports = function(RED) {
                                 "/cmd/" +
                                 this.channel
 
-                //console.log("CayenneActuatorNode(): this.topic =", this.topic)
+                RED.log.debug("subscribe topic = " + this.topic)
 
                 node.brokerConn.register(this)
 
@@ -76,15 +72,13 @@ module.exports = function(RED) {
 
                         var msg = {topic:topic, payload:payload, qos:packet.qos, retain:packet.retain}
 
-                        //console.log("CayenneActuatorNode(in): msg =", msg)
+                        RED.log.debug("message from cayenne = " + msg)
 
                         var req = msg.payload.split(",")
 
                         msg.sequence    = req[0]
                         msg.payload     = parseInt(req[1])
                         msg.channel     = node.channel
-
-                        //console.log("CayenneActuatorNode(out): msg =", msg)
 
                         node.send(msg)
 
@@ -100,19 +94,21 @@ module.exports = function(RED) {
 
                         msg.payload = "ok," + req[0]
 
-                        //console.log("CayenneActuatorNode(response): msg =", msg)
+                        RED.log.debug("response topic   = " + msg.topic)
+                        RED.log.debug("response payload = " + msg.payload)
 
                         node.brokerConn.publish(msg)  // send the message
+
+                        node.valueOut = "ok"
+                        updateNodeStatus(node, node.brokerConn.connected, node.valueIn, node.valueOut)
                     } catch(err) {
-                        node.log(err)
+                        node.error(err)
                     }
                 }, this.id)
 
-                if (this.brokerConn.connected) {
-                    node.status({fill:"green",shape:"dot",text:"node-red:common.status.connected"})
-                }
+                updateNodeStatus(node, node.brokerConn.connected)
             } else {
-                node.log(RED._("cayenne.errors.missing-config"))
+                node.error(RED._("cayenne.errors.missing-config"))
             }
             
             this.on('close', function(done) {
@@ -122,17 +118,14 @@ module.exports = function(RED) {
                 }
             })
         } else {
-            this.log(RED._("cayenne.errors.missing-config"))
+            this.error(RED._("cayenne.errors.missing-config"))
         }
 
         this.on('input', function (msg) {
-            console.log("CayenneActuatorFeedbackNode(): msg =", msg)
-
             var val
 
             if (typeof msg.payload === 'string') {
-                node.log(RED._("cayenne.errors.invalid-value-type"))
-                return
+                val = parseInt(msg.payload)
             } else if (typeof msg.payload === 'number') {
                 val = msg.payload
             } else if (typeof msg.payload === 'boolean') {
@@ -142,10 +135,10 @@ module.exports = function(RED) {
                     val = 1
                 }
             } else if (typeof msg.payload === 'object') {
-                node.log(RED._("cayenne.errors.invalid-value-type"))
+                node.error(RED._("cayenne.errors.invalid-value-type"))
                 return
             } else {
-                node.log(RED._("cayenne.errors.invalid-value-type"))
+                node.error(RED._("cayenne.errors.invalid-value-type"))
                 return
             }
 
@@ -159,7 +152,13 @@ module.exports = function(RED) {
                             "/" +
                             node.channel
 
+            RED.log.debug("reply topic   = " + msg.topic)
+            RED.log.debug("reply payload = " + msg.payload)
+
             node.brokerConn.publish(msg)  // send the message
+
+            node.valueIn = val
+            updateNodeStatus(node, node.brokerConn.connected, node.valueIn, node.valueOut)
         })
     }
 
@@ -185,19 +184,15 @@ module.exports = function(RED) {
         this.valuetype  = config.valuetypeEx
 
         this.client     = config.client
-        this.clientConn = RED.nodes.getNode(this.client)
+        this.clientConn = RED.nodes.getNode(this.client)    // the configuration
 
-        //console.log("CayenneSensorNode(): this.clientConn =", this.clientConn)
-        
         this.broker     = this.clientConn.broker
-        this.brokerConn = RED.nodes.getNode(this.broker)
-
-        //console.log("CayenneSensorNode(): this.brokerConn =", this.brokerConn)
+        this.brokerConn = RED.nodes.getNode(this.broker)    // the MQTT broker
 
         var node = this
 
         if (this.brokerConn) {
-            this.status({fill:"red",shape:"ring",text:"node-red:common.status.disconnected"})
+            updateNodeStatus(this, false)
 
             if (this.channel) {
                 //
@@ -210,7 +205,7 @@ module.exports = function(RED) {
                                 "/cmd/" +
                                 this.channel
 
-                //console.log("CayenneActuatorNode(): this.topic =", this.topic)
+                RED.log.debug("subscribe topic = " + this.topic)
 
                 node.brokerConn.register(this)
 
@@ -220,15 +215,13 @@ module.exports = function(RED) {
 
                         var msg = {topic:topic, payload:payload, qos:packet.qos, retain:packet.retain}
 
-                        //console.log("CayenneActuatorNode(in): msg =", msg)
+                        RED.log.debug("message from cayenne = " + msg)
 
                         var req = msg.payload.split(",")
 
                         msg.sequence    = req[0]
                         msg.payload     = parseInt(req[1])
                         msg.channel     = node.channel
-
-                        //console.log("CayenneActuatorNode(out): msg =", msg)
 
                         node.send(msg)
 
@@ -244,7 +237,8 @@ module.exports = function(RED) {
                                     "/" +
                                     node.channel
 
-                        //console.log("CayenneActuatorNode(reply): msg =", msg)
+                        RED.log.debug("reply topic   = " + msg.topic)
+                        RED.log.debug("reply payload = " + msg.payload)
 
                         node.brokerConn.publish(msg)  // send the message
 
@@ -257,17 +251,19 @@ module.exports = function(RED) {
 
                         msg.payload = "ok," + req[0]
 
-                        //console.log("CayenneActuatorNode(response): msg =", msg)
+                        RED.log.debug("response topic   = " + msg.topic)
+                        RED.log.debug("response payload = " + msg.payload)
 
                         node.brokerConn.publish(msg)  // send the message
+
+                        node.valueOut = "ok"
+                        updateNodeStatus(node, node.brokerConn.connected, node.valueIn, node.valueOut)
                     } catch(err) {
-                        node.log(err)
+                        node.error(err)
                     }
                 }, this.id)
 
-                if (this.brokerConn.connected) {
-                    node.status({fill:"green",shape:"dot",text:"node-red:common.status.connected"})
-                }
+                updateNodeStatus(node, node.brokerConn.connected)
             } else {
                 node.log(RED._("cayenne.errors.missing-config"))
             }
@@ -304,19 +300,15 @@ module.exports = function(RED) {
         this.dataunit   = config.dataunitEx
 
         this.client     = config.client
-        this.clientConn = RED.nodes.getNode(this.client)
+        this.clientConn = RED.nodes.getNode(this.client)    // the configuration
 
-        //console.log("CayenneSensorNode(): this.clientConn =", this.clientConn)
-        
         this.broker     = this.clientConn.broker
-        this.brokerConn = RED.nodes.getNode(this.broker)
-
-        //console.log("CayenneSensorNode(): this.brokerConn =", this.brokerConn)
+        this.brokerConn = RED.nodes.getNode(this.broker)    // the MQTT broker
 
         var node = this
 
         if (this.brokerConn) {
-            this.status({fill:"red",shape:"ring",text:"node-red:common.status.disconnected"})
+            updateNodeStatus(this, false)
 
             this.on("input", function(msg) {
                 try {
@@ -327,10 +319,7 @@ module.exports = function(RED) {
                      * determine incoming message type
                      *
                      */
-                    //console.log("CayenneSensorNode(): msg = ", msg)
-
                     if (msg.hasOwnProperty("fabric")) {
-                        //console.log("CayenneSensorNode(): got 'fabric'")
                         var checks = 0
 
                         if (msg.fabric.hasOwnProperty("type")) {
@@ -355,11 +344,7 @@ module.exports = function(RED) {
                             checks++
                         }
 
-                        //console.log("CayenneSensorNode(): checks = ", checks)
-
                         if (checks == 7) {
-                            //console.log("CayenneSensorNode(): message is a fabric message")
-                            //console.log("CayenneSensorNode(): channel =", this.channel)
                             //
                             // build topic
                             //
@@ -385,7 +370,7 @@ module.exports = function(RED) {
 
                             val = msg.fabric.value
                         } else {
-                            node.log("fabric message is missing one or more fields")
+                            node.error("fabric message is missing one or more fields")
                             return
                         }
                     } else if (msg.hasOwnProperty("payload")) {
@@ -401,15 +386,15 @@ module.exports = function(RED) {
 
                         val = msg.payload
                     } else {
-                        node.log("message has no payload")
+                        node.error("message has no payload")
                         return
                     }
 
-                    //console.log("CayenneSensorNode(): topic =", topic)
-                    //console.log("CayenneSensorNode(): val   =", val)
+                    RED.log.debug("sensor topic = " + topic)
+                    RED.log.debug("sensor val   = " + val)
 
                     if (!/^(#$|(\+|[^+#]*)(\/(\+|[^+#]*))*(\/(\+|#|[^+#]*))?$)/.test(topic)) {
-                        node.log(RED._("cayenne.errors.invalid-topic"))
+                        node.error(RED._("cayenne.errors.invalid-topic"))
                         return
                     }
 
@@ -424,10 +409,10 @@ module.exports = function(RED) {
                             val = 1
                         }
                     } else if (typeof val === 'object') {
-                        node.log(RED._("cayenne.errors.invalid-value-type"))
+                        node.error(RED._("cayenne.errors.invalid-value-type"))
                         return
                     } else {
-                        node.log(RED._("cayenne.errors.invalid-value-type"))
+                        node.error(RED._("cayenne.errors.invalid-value-type"))
                         return
                     }
 
@@ -439,7 +424,7 @@ module.exports = function(RED) {
                         payload = node.datatype + "," + node.dataunit + "=" + val
                     }
 
-                    console.log("CayenneSensorNode(): payload =", payload)
+                    RED.log.debug("sensor payload = " + payload)
 
                     // build Cayenne MQTT message
                     msg.qos     = node.qos
@@ -448,14 +433,15 @@ module.exports = function(RED) {
                     msg.payload = payload
 
                     node.brokerConn.publish(msg)  // send the message
+
+                    node.valueIn = val
+                    updateNodeStatus(node, node.brokerConn.connected, node.valueIn, node.valueOut)
                 } catch(err) {
                     node.log(err)
                 }
             })
 
-            if (this.brokerConn.connected) {
-                node.status({fill:"green",shape:"dot",text:"node-red:common.status.connected"})
-            }
+            updateNodeStatus(node, node.brokerConn.connected)
 
             node.brokerConn.register(node)
             
@@ -463,7 +449,7 @@ module.exports = function(RED) {
                 node.brokerConn.deregister(node, done)
             })
         } else {
-            this.log(RED._("cayenne.errors.missing-config"))
+            this.error(RED._("cayenne.errors.missing-config"))
         }
     }
 
@@ -473,22 +459,46 @@ module.exports = function(RED) {
 	 * 
 	 *
 	 */
-    function CayenneClientNode(config) {
-        //console.log("CayenneClientNode(): config = ", config)
+    function updateNodeStatus(node, connected, valueIn, valueOut) {
+        var text = timeNowString()
 
+        if (typeof valueIn === 'undefined') {
+            //valueIn = "n/a"
+        } else {
+            text = text + " I: " + valueIn
+        }
+
+        if (typeof valueOut === 'undefined') {
+            //valueOut = "n/a"
+        } else {
+            text = text + " O: " + valueOut
+        }
+
+        if (connected == true) {
+            node.status({fill:"green", shape:"dot", text:text})
+        } else {
+            node.status({fill:"red", shape:"ring", text:text})
+        }
+    }
+
+	/******************************************************************************************************************
+	 * 
+	 *
+	 */
+    function CayenneClientNode(config) {
         RED.nodes.createNode(this, config)
 
         this.username   = config.username
         this.clientid   = config.clientid
         this.broker     = config.broker
-        this.brokerConn = RED.nodes.getNode(this.broker)
+        this.brokerConn = RED.nodes.getNode(this.broker)    // the MQTT broker
 
         var node = this
 
         if (this.brokerConn) {
             node.brokerConn.register(node)
         } else {
-            this.log(RED._("cayenne.errors.missing-config"))
+            this.error(RED._("cayenne.errors.missing-config"))
         }
 
         this.on('close', function(done) {
@@ -497,4 +507,21 @@ module.exports = function(RED) {
     }
 
     RED.nodes.registerType("cayenne-client", CayenneClientNode)
+
+	/******************************************************************************************************************
+	 * homemade - can't find a way to change the locale :-(
+	 *
+	 */
+    function timeNowString() {
+        var now     =   new Date()
+
+        var h       = ("0" + (now.getHours())).slice(-2)
+        var m       = ("0" + (now.getMinutes())).slice(-2)
+        var s       = ("0" + (now.getSeconds())).slice(-2)
+
+        var nowText = h + ":" + m + ":" + s
+
+        return nowText
+    }
+
 }

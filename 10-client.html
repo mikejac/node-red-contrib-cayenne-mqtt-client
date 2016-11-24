@@ -40,12 +40,14 @@
         <input type="text" id="node-input-name" data-i18n="[placeholder]cayenne.label.name">
     </div>
     <div class="form-row">
-        <label for="node-input-datatype"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.datatype"></span></label>
-        <input type="text" id="node-input-datatype">
+        <label for="node-input-actuatordatatype"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.datatype"></span></label>
+        <select id="node-input-actuatordatatype">
+        </select>
     </div>
     <div class="form-row">
-        <label for="node-input-dataunit"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.dataunit"></span></label>
-        <input type="text" id="node-input-dataunit">
+        <label for="node-input-actuatordataunit"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.dataunit"></span></label>
+        <select id="node-input-actuatordataunit">
+        </select>
     </div>
     <div class="form-row">
         <label for="node-input-channel"><i class="fa fa-tag"></i> <span data-i18n="cayenne.label.channel"></span></label>
@@ -60,7 +62,7 @@
 
 <script type="text/javascript">
     RED.nodes.registerType('cayenne actuator-feedback',{
-        category: 'function',
+        category: 'mikejac-function',
         defaults: {
             client: {type:"cayenne-client", required:true},
             qos: {value:"0"},
@@ -104,47 +106,41 @@
             console.log("oneditprepare(): datatype = ", this.datatypeEx)
             console.log("oneditprepare(): dataunit = ", this.dataunitEx)
 
-            $("#node-input-datatype").typedInput({
-                default: this.datatypeEx,
-                types:   getActuatorTypes()
-            })
+            populateActuatorDatatype(this.datatypeEx)
+            populateActuatorDataunit(this.datatypeEx, this.dataunitEx)
 
-            $("#node-input-dataunit").typedInput({
-                default: this.dataunitEx,
-                types:   findActuatorDataUnit(this.datatypeEx).units
-            })
-
-            $("#node-input-datatype").on("change", function(type, value) {
-                console.log("oneditprepare(): change; value = ", value) 
+            $("#node-input-actuatordatatype").on("change", function() {
+                var value = $("#node-input-actuatordatatype").val()
+                
+                //console.log("oneditprepare(): change; value = ", value) 
 
                 updateDataUnit(value)
             })
 
             function updateDataUnit(datatype) {
-                console.log("updateDataUnit(): datatype =", datatype)
-                
+                //console.log("updateDataUnit(): datatype = ", datatype)
+
                 if (typeof datatype === 'undefined') {
                     return
                 }
 
-                var d = findActuatorDataUnit(datatype)
-                console.log("updateDataUnit(): d =", d)
-
-                $("#node-input-dataunit").typedInput('types', d.units)
-                $("#node-input-dataunit").typedInput('type',  d.defUnit)
+                populateActuatorDataunit(datatype)
             }
+
         },
         oneditsave: function() {
-            var datatype = $("#node-input-datatype").typedInput('type')
-            var dataunit = $("#node-input-dataunit").typedInput('type')
+            var datatype = $("#node-input-actuatordatatype").val()
+            var dataunit = $("#node-input-actuatordataunit").val()
 
             var d = findActuatorDataUnit(datatype)
+
+            //console.log("oneditsave(): datatype =", datatype)
+            //console.log("oneditsave(): dataunit =", dataunit)
+            //console.log("oneditsave(): valuetype =", d.valuetype)
 
             this.datatypeEx  = datatype
             this.dataunitEx  = dataunit
             this.valuetypeEx = d.valuetype
- 
-            console.log("oneditsave(): this =", this)
         }
     });
 </script>
@@ -170,12 +166,14 @@
         <input type="text" id="node-input-name" data-i18n="[placeholder]cayenne.label.name">
     </div>
     <div class="form-row">
-        <label for="node-input-datatype"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.datatype"></span></label>
-        <input type="text" id="node-input-datatype">
+        <label for="node-input-actuatordatatype"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.datatype"></span></label>
+        <select id="node-input-actuatordatatype">
+        </select>
     </div>
     <div class="form-row">
-        <label for="node-input-dataunit"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.dataunit"></span></label>
-        <input type="text" id="node-input-dataunit">
+        <label for="node-input-actuatordataunit"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.dataunit"></span></label>
+        <select id="node-input-actuatordataunit">
+        </select>
     </div>
     <div class="form-row">
         <label for="node-input-channel"><i class="fa fa-tag"></i> <span data-i18n="cayenne.label.channel"></span></label>
@@ -190,7 +188,7 @@
 
 <script type="text/javascript">
     RED.nodes.registerType('cayenne actuator',{
-        category: 'input',
+        category: 'mikejac-input',
         defaults: {
             client: {type:"cayenne-client", required:true},
             qos: {value:"0"},
@@ -222,59 +220,51 @@
             if (typeof this.datatypeEx === 'undefined') {
                 this.datatypeEx = "_none_"
                 this.dataunitEx = "_none_"
-                console.log("oneditprepare(): datatype blank")
+                //console.log("oneditprepare(): datatype blank")
             }
 
             if (typeof this.dataunitEx === 'undefined') {
                 this.dataunitEx = "_none_"
-                console.log("oneditprepare(): dataunit blank")
+                //console.log("oneditprepare(): dataunit blank")
             }
 
-            console.log("oneditprepare(): datatype = ", this.datatypeEx)
-            console.log("oneditprepare(): dataunit = ", this.dataunitEx)
+            //console.log("oneditprepare(): datatype = ", this.datatypeEx)
+            //console.log("oneditprepare(): dataunit = ", this.dataunitEx)
 
-            $("#node-input-datatype").typedInput({
-                default: this.datatypeEx,
-                types:   getActuatorTypes()
-            })
+            populateActuatorDatatype(this.datatypeEx)
+            populateActuatorDataunit(this.datatypeEx, this.dataunitEx)
 
-            $("#node-input-dataunit").typedInput({
-                default: this.dataunitEx,
-                types:   findActuatorDataUnit(this.datatypeEx).units
-            })
-
-            $("#node-input-datatype").on("change", function(type, value) {
+            $("#node-input-actuatordatatype").on("change", function() {
+                var value = $("#node-input-actuatordatatype").val()
+                
                 //console.log("oneditprepare(): change; value = ", value) 
-                //console.log("oneditprepare(): change; datatypes  = ", datatypes)
 
                 updateDataUnit(value)
             })
 
             function updateDataUnit(datatype) {
                 //console.log("updateDataUnit(): datatype = ", datatype)
+
                 if (typeof datatype === 'undefined') {
                     return
                 }
 
-                var d = findActuatorDataUnit(datatype)
-
-                $("#node-input-dataunit").typedInput('types', d.units)
-                $("#node-input-dataunit").typedInput('type',  d.defUnit)
-
-                this.valuetypeEx = d.valuetype
+                populateActuatorDataunit(datatype)
             }
         },
         oneditsave: function() {
-            var datatype = $("#node-input-datatype").typedInput('type')
-            var dataunit = $("#node-input-dataunit").typedInput('type')
+            var datatype = $("#node-input-actuatordatatype").val()
+            var dataunit = $("#node-input-actuatordataunit").val()
 
             var d = findActuatorDataUnit(datatype)
+
+            //console.log("oneditsave(): datatype =", datatype)
+            //console.log("oneditsave(): dataunit =", dataunit)
+            //console.log("oneditsave(): valuetype =", d.valuetype)
 
             this.datatypeEx  = datatype
             this.dataunitEx  = dataunit
             this.valuetypeEx = d.valuetype
- 
-            console.log("oneditsave(): this =", this)
         }
     });
 </script>
@@ -300,12 +290,14 @@
         <input type="text" id="node-input-name" data-i18n="[placeholder]cayenne.label.name">
     </div>
     <div class="form-row">
-        <label for="node-input-datatype"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.datatype"></span></label>
-        <input type="text" id="node-input-datatype">
+        <label for="node-input-sensordatatype"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.datatype"></span></label>
+        <select id="node-input-sensordatatype">
+        </select>
     </div>
     <div class="form-row">
-        <label for="node-input-dataunit"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.dataunit"></span></label>
-        <input type="text" id="node-input-dataunit">
+        <label for="node-input-sensordataunit"><i class="fa fa-empire"></i> <span data-i18n="cayenne.label.dataunit"></span></label>
+        <select id="node-input-sensordataunit">
+        </select>
     </div>
     <div class="form-row">
         <label for="node-input-channel"><i class="fa fa-tag"></i> <span data-i18n="cayenne.label.channel"></span></label>
@@ -320,7 +312,7 @@
 
 <script type="text/javascript">
     RED.nodes.registerType('cayenne sensor',{
-        category: 'output',
+        category: 'mikejac-output',
         defaults: {
             client: {type:"cayenne-client", required:true},
             qos: {value:"0"},
@@ -345,60 +337,53 @@
         oneditprepare: function() {
             //console.log("oneditprepare(1): this = ", this)
             if (typeof this.qos === 'undefined') {
-                $("#node-input-qos").val("0");
+                $("#node-input-qos").val("0")
             }
 
             if (typeof this.datatypeEx === 'undefined') {
                 this.datatypeEx = "_none_"
                 this.dataunitEx = "_none_"
-                console.log("oneditprepare(): datatype blank")
+                //console.log("oneditprepare(): datatype blank")
             }
 
             if (typeof this.dataunitEx === 'undefined') {
                 this.dataunitEx = "_none_"
-                console.log("oneditprepare(): dataunit blank")
+                //console.log("oneditprepare(): dataunit blank")
             }
 
-            console.log("oneditprepare(): datatype = ", this.datatypeEx)
-            console.log("oneditprepare(): dataunit = ", this.dataunitEx)
+            //console.log("oneditprepare(): datatype = ", this.datatypeEx)
+            //console.log("oneditprepare(): dataunit = ", this.dataunitEx)
 
-            $("#node-input-datatype").typedInput({
-                default: this.datatypeEx,
-                types:   getSensorTypes()
-            })
-
-            $("#node-input-dataunit").typedInput({
-                default: this.dataunitEx,
-                types:   findSensorDataUnit(this.datatypeEx).units
-            })
-
-            $("#node-input-datatype").on("change", function(type, value) {
+            populateSensorDatatype(this.datatypeEx)
+            populateSensorDataunit(this.datatypeEx, this.dataunitEx)
+            
+            $("#node-input-sensordatatype").on("change", function() {
+                var value = $("#node-input-sensordatatype").val()
+                
                 //console.log("oneditprepare(): change; value = ", value) 
-                //console.log("oneditprepare(): change; datatypes  = ", datatypes)
 
                 updateDataUnit(value)
             })
 
             function updateDataUnit(datatype) {
                 //console.log("updateDataUnit(): datatype = ", datatype)
+
                 if (typeof datatype === 'undefined') {
                     return
                 }
 
-                var d = findSensorDataUnit(datatype)
-
-                $("#node-input-dataunit").typedInput('types', d.units);
-                $("#node-input-dataunit").typedInput('type',  d.defUnit);
+                populateSensorDataunit(datatype)
             }
         },
         oneditsave: function() {
-            var datatype = $("#node-input-datatype").typedInput('type')
-            var dataunit = $("#node-input-dataunit").typedInput('type')
+            var datatype = $("#node-input-sensordatatype").val()
+            var dataunit = $("#node-input-sensordataunit").val()
+
+            //console.log("oneditsave(): datatype =", datatype)
+            //console.log("oneditsave(): dataunit =", dataunit)
 
             this.datatypeEx = datatype
             this.dataunitEx = dataunit
-
-            console.log("oneditsave(): this =", this)
         }
     });
 </script>
@@ -454,60 +439,63 @@
     helpers/common
 -->
 <script type="text/javascript">
-    var actuatorTypes = [
-        {
-            value:"_none_",
-            label:"None",
-            hasValue:false,
-            units: [
-                {value:"_none_",    label:"None", hasValue:false}
-            ],
-            valuetype: "digital",
-            defUnit:"_none_"
-        },
-        {
-            value:"hvac_temp",
-            label:"HVAC.Change Temperature",
-            hasValue:false,
-            units: [
-                {value:"f",         label:"Fahrenheit", hasValue:false},
-                {value:"c",         label:"Celsius", hasValue:false}
-            ],
-            valuetype: "analog",
-            defUnit:"c"
-        },
-        {
-            value:"lt_switch_act",
-            label:"Light Switch",
-            hasValue:false,
-            units: [
-                {value:"_null1",    label:"Off/On", hasValue:false},
-                {value:"d",         label:"Digital (0/1)", hasValue:false},
-                {value:"_null2",    label:"Low/High", hasValue:false}
-            ],
-            valuetype: "digital",
-            defUnit:"d"
-        },
-        {
-            value:"switch",
-            label:"Switch",
-            hasValue:false,
-            units: [
-                {value:"_null1",    label:"Off/On", hasValue:false},
-                {value:"d",         label:"Digital (0/1)", hasValue:false},
-                {value:"_null2",    label:"Low/High", hasValue:false}
-            ],
-            valuetype: "digital",
-            defUnit:"d"
-        }
-    ]
+    //
+    //
+    function populateActuatorDatatype(datatype) {
+        //console.log("populateActuatorDatatype(global): datatype =", datatype)
 
-    function getActuatorTypes() {
-        return actuatorTypes
+        for (i = 0, len = actuatorTypes.length; i < len; i++) {
+            var value = actuatorTypes[i].value
+            var label = actuatorTypes[i].label
+
+            $('#node-input-actuatordatatype')
+                .append($('<option>', { value : value })
+                .text(label)) 
+        }
+
+        $('#node-input-actuatordatatype').val(datatype)
     }
 
+    //
+    //
+    function populateActuatorDataunit(datatype, dataunit) {
+        //console.log("populateActuatorDataunit(global): datatype =", datatype)
+        //console.log("populateActuatorDataunit(global): dataunit =", dataunit)
+
+        $('#node-input-actuatordataunit').empty()
+
+        for (i = 0, len = sensorTypes.length; i < len; i++) { 
+            //console.log("populateActuatorDataunit(global): datatypes[i] =", actuatorTypes[i])
+
+            if (datatype == actuatorTypes[i].value) {
+                for (j = 0, ll = actuatorTypes[i].units.length; j < ll; j++) {
+                    var value = actuatorTypes[i].units[j].value
+                    var label = actuatorTypes[i].units[j].label
+            
+                    //console.log("populateActuatorDataunit(global): value =", value)
+                    //console.log("populateActuatorDataunit(global): label =", label)
+
+                    $('#node-input-actuatordataunit')
+                        .append($('<option>', { value : value })
+                        .text(label)) 
+                }
+
+
+                if (typeof dataunit === 'undefined') {
+                    $("#node-input-actuatordataunit").val(actuatorTypes[i].defUnit)
+                } else {
+                    $("#node-input-actuatordataunit").val(dataunit)                    
+                }
+
+                return
+            }
+        }
+    }
+
+    //
+    //
     function findActuatorDataUnit(datatype) {
-        console.log("findActuatorDataUnit(global): datatype =", datatype)
+        //console.log("findActuatorDataUnit(global): datatype =", datatype)
 
         for (i = 0, len = actuatorTypes.length; i < len; i++) { 
             console.log("findActuatorDataUnit(global): datatypes[i] =", actuatorTypes[i])
@@ -516,10 +504,189 @@
             }
         }
 
-        console.log("findActuatorDataUnit(global): datatype not found!")
+        console.log("findActuatorDataUnit(global): datatype not found! ", datatype)
 
         return actuatorTypes[0]
     }
+
+    //
+    //
+    function populateSensorDatatype(datatype) {
+        //console.log("populateSensorDatatype(global): datatype =", datatype)
+
+        for (i = 0, len = sensorTypes.length; i < len; i++) {
+            var value = sensorTypes[i].value
+            var label = sensorTypes[i].label
+
+            $('#node-input-sensordatatype')
+                .append($('<option>', { value : value })
+                .text(label)) 
+        }
+
+        $('#node-input-sensordatatype').val(datatype)
+    }
+
+    //
+    //
+    function populateSensorDataunit(datatype, dataunit) {
+        //console.log("populateSensorDataunit(global): datatype =", datatype)
+        //console.log("populateSensorDataunit(global): dataunit =", dataunit)
+
+        $('#node-input-sensordataunit').empty()
+
+        for (i = 0, len = sensorTypes.length; i < len; i++) { 
+            //console.log("populateSensorDataunit(global): datatypes[i] =", sensorTypes[i])
+
+            if (datatype == sensorTypes[i].value) {
+                for (j = 0, ll = sensorTypes[i].units.length; j < ll; j++) {
+                    var value = sensorTypes[i].units[j].value
+                    var label = sensorTypes[i].units[j].label
+            
+                    //console.log("populateSensorDataunit(global): value =", value)
+                    //console.log("populateSensorDataunit(global): label =", label)
+
+                    $('#node-input-sensordataunit')
+                        .append($('<option>', { value : value })
+                        .text(label)) 
+                }
+
+
+                if (typeof dataunit === 'undefined') {
+                    $("#node-input-sensordataunit").val(sensorTypes[i].defUnit)
+                } else {
+                    $("#node-input-sensordataunit").val(dataunit)                    
+                }
+
+                return
+            }
+        }
+    }
+
+    var actuatorTypes = [
+        {
+            value:"_none_",
+            label:"None",
+            hasValue:false,
+            units: [
+                {value:"_none_", label:"None", hasValue:false}
+            ],
+            valuetype: "digital",
+            defUnit:"_none_"
+        },
+        {
+            value:"hvac_state",
+            label:"HVAC.Change State",
+            hasValue:false,
+            units: [
+                {value:"null", label:"State", hasValue:false}
+            ],
+            valuetype: "digital",
+            defUnit:"null"
+        },
+        {
+            value:"hvac_temp",
+            label:"HVAC.Change Temperature",
+            hasValue:false,
+            units: [
+                {value:"f", label:"Fahrenheit", hasValue:false},
+                {value:"c", label:"Celsius", hasValue:false}
+            ],
+            valuetype: "analog",
+            defUnit:"c"
+        },
+        {
+            value:"hvac_off_on",
+            label:"HVAC.Off/On",
+            hasValue:false,
+            units: [
+                {value:"null", label:"Off/On", hasValue:false}
+            ],
+            valuetype: "digital",
+            defUnit:"null"
+        },
+        {
+            value:"lt_switch_act",
+            label:"Light Switch",
+            hasValue:false,
+            units: [
+                {value:"null1", label:"Off/On", hasValue:false},
+                {value:"d", label:"Digital (0/1)", hasValue:false},
+                {value:"null2", label:"Low/High", hasValue:false}
+            ],
+            valuetype: "digital",
+            defUnit:"null1"
+        },
+        {
+            value:"lt_color",
+            label:"Lighting.Color",
+            hasValue:false,
+            units: [
+                {value:"null", label:"Hexadecimal", hasValue:false}
+            ],
+            valuetype: "analog",
+            defUnit:"null"
+        },
+        {
+            value:"lt_lum",
+            label:"Lighting.Luminosity",
+            hasValue:false,
+            units: [
+                {value:"p", label:"% (0 to 100)", hasValue:false},
+                {value:"lux", label:"Lux", hasValue:false},
+                {value:"v", label:"Volts", hasValue:false},
+                {value:"r", label:"Ratio", hasValue:false}
+            ],
+            valuetype: "analog",
+            defUnit:"p"
+        },
+        {
+            value:"motor",
+            label:"Motor",
+            hasValue:false,
+            units: [
+                {value:"null1", label:"Off/On", hasValue:false},
+                {value:"null2", label:"Low/High", hasValue:false},
+                {value:"deg", label:"Degree Angle", hasValue:false}
+            ],
+            valuetype: "digital",
+            defUnit:"null1"
+        },
+        {
+            value:"relay",
+            label:"Relay",
+            hasValue:false,
+            units: [
+                {value:"null1", label:"Off/On", hasValue:false},
+                {value:"null2", label:"Low/High", hasValue:false}
+            ],
+            valuetype: "digital",
+            defUnit:"null1"
+        },
+        {
+            value:"switch",
+            label:"Switch",
+            hasValue:false,
+            units: [
+                {value:"null1", label:"Off/On", hasValue:false},
+                {value:"null2", label:"Low/High", hasValue:false},
+                {value:"d", label:"Digital (0/1)", hasValue:false}
+            ],
+            valuetype: "digital",
+            defUnit:"null1"
+        },
+        {
+            value:"valve",
+            label:"Valve",
+            hasValue:false,
+            units: [
+                {value:"null1", label:"Off/On", hasValue:false},
+                {value:"null2", label:"Low/High", hasValue:false},
+                {value:"d", label:"Digital (0/1)", hasValue:false}
+            ],
+            valuetype: "digital",
+            defUnit:"null1"
+        },
+    ]
 
     var sensorTypes = [
         {
@@ -527,114 +694,1016 @@
             label:"None",
             hasValue:false,
             units: [
-                {value:"_none_",   label:"None", hasValue:false}
+                {value:"_none_", label:"None", hasValue:false}
             ],
             defUnit:"_none_"
+        },
+        {
+            value:"abs_hum",
+            label:"Absolute Humidity",
+            hasValue:false,
+            units: [
+                {value:"gm3", label:"Grams per cubic meter", hasValue:false}
+            ],
+            defUnit:"gm3"
+        },
+        {
+            value:"absrb_rad",
+            label:"Absorbed Radiation",
+            hasValue:false,
+            units: [
+                {value:"rad", label:"Rad", hasValue:false},
+                {value:"gy", label:"Gray", hasValue:false}
+            ],
+            defUnit:"rad"
+        },
+        {
+            value:"gx",
+            label:"Acceleration.gx axis",
+            hasValue:false,
+            units: [
+                {value:"ms2", label:"Meters per second squared", hasValue:false}
+            ],
+            defUnit:"ms2"
+        },
+        {
+            value:"gy",
+            label:"Acceleration.gy axis",
+            hasValue:false,
+            units: [
+                {value:"ms2", label:"Meters per second squared", hasValue:false}
+            ],
+            defUnit:"ms2"
+        },
+        {
+            value:"gz",
+            label:"Acceleration.gz axis",
+            hasValue:false,
+            units: [
+                {value:"ms2", label:"Meters per second squared", hasValue:false}
+            ],
+            defUnit:"ms2"
+        },
+        {
+            value:"alt",
+            label:"Altitude",
+            hasValue:false,
+            units: [
+                {value:"m", label:"Meters above sea level", hasValue:false},
+                {value:"ft", label:"Feet above sea level", hasValue:false}
+            ],
+            defUnit:"m"
+        },
+        {
+            value:"amount",
+            label:"Amount of substance",
+            hasValue:false,
+            units: [
+                {value:"mol", label:"Mole", hasValue:false}
+            ],
+            defUnit:"mol"
+        },
+        {
+            value:"area",
+            label:"Area",
+            hasValue:false,
+            units: [
+                {value:"m2", label:"Square meter", hasValue:false}
+            ],
+            defUnit:"m2"
         },
         {
             value:"bp",
             label:"Barometric pressure",
             hasValue:false,
             units: [
-                {value:"pa",        label:"Pascal", hasValue:false},
-                {value:"hpa",       label:"Hecto Pascal", hasValue:false}
+                {value:"pa", label:"Pascal", hasValue:false},
+                {value:"hpa", label:"Hecto Pascal", hasValue:false}
             ],
             defUnit:"hpa"
+        },
+        {
+            value:"batt",
+            label:"Battery",
+            hasValue:false,
+            units: [
+                {value:"p", label:"% (0 to 100)", hasValue:false}
+            ],
+            defUnit:"p"
+        },
+        {
+            value:"bio",
+            label:"Biometric",
+            hasValue:false,
+            units: [
+                {value:"null", label:"Byte Array", hasValue:false}
+            ],
+            defUnit:"null"
+        },
+        {
+            value:"blood",
+            label:"Blood Count",
+            hasValue:false,
+            units: [
+                {value:"cmm", label:"Cells by cubic millimeter", hasValue:false},
+                {value:"p", label:"% (0 to 100)", hasValue:false}
+            ],
+            defUnit:"cmm"
+        },
+        {
+            value:"bytes",
+            label:"Bytes",
+            hasValue:false,
+            units: [
+                {value:"bit", label:"Bits", hasValue:false},
+                {value:"byte", label:"Bytes", hasValue:false},
+                {value:"kb", label:"Kilobytes", hasValue:false},
+                {value:"mb", label:"Megabytes", hasValue:false},
+                {value:"gb", label:"Gigabytes", hasValue:false},
+                {value:"tb", label:"Terabytes", hasValue:false}
+            ],
+            defUnit:"byte"
+        },
+        {
+            value:"cap",
+            label:"Capacitance",
+            hasValue:false,
+            units: [
+                {value:"farad", label:"Farad", hasValue:false}
+            ],
+            defUnit:"farad"
+        },
+        {
+            value:"co2",
+            label:"Carbon Dioxide",
+            hasValue:false,
+            units: [
+                {value:"ppm", label:"Parts per milliion", hasValue:false},
+                {value:"wmoco2", label:"Units of Micromole", hasValue:false}
+            ],
+            defUnit:"ppm"
+        },
+        {
+            value:"charge",
+            label:"Charge",
+            hasValue:false,
+            units: [
+                {value:"q", label:"Coulomb", hasValue:false}
+            ],
+            defUnit:"q"
+        },
+        {
+            value:"chol",
+            label:"Cholesterol",
+            hasValue:false,
+            units: [
+                {value:"mmol", label:"Millimoles/liter", hasValue:false},
+                {value:"mgdl", label:"Milligrams/deciliter", hasValue:false}
+            ],
+            defUnit:"mgdl"
         },
         {
             value:"color",
             label:"Color",
             hasValue:false,
             units: [
-                {value:"rgb",       label:"RGB", hasValue:false},
-                {value:"cmyk",      label:"CYMK", hasValue:false},
-                {value:"hex",       label:"Hexadecimal", hasValue:false}
+                {value:"null1", label:"RGB", hasValue:false},
+                {value:"null2", label:"CYMK", hasValue:false},
+                {value:"null3", label:"Hexadecimal", hasValue:false}
             ],
-            defUnit:"rgb"
+            defUnit:"null1"
+        },
+        {
+            value:"conduct",
+            label:"Conductance",
+            hasValue:false,
+            units: [
+                {value:"s", label:"Siemen", hasValue:false}
+            ],
+            defUnit:"s"
+        },
+        {
+            value:"cpu",
+            label:"CPU",
+            hasValue:false,
+            units: [
+                {value:"p", label:"% (0 to 100)", hasValue:false}
+            ],
+            defUnit:"p"
+        },
+        {
+            value:"current",
+            label:"Current",
+            hasValue:false,
+            units: [
+                {value:"a", label:"Ampere", hasValue:false}
+            ],
+            defUnit:"a"
+        },
+        {
+            value:"current_density",
+            label:"Current density",
+            hasValue:false,
+            units: [
+                {value:"am2", label:"Ampere per squre meter", hasValue:false}
+            ],
+            defUnit:"am2"
+        },
+        {
+            value:"density",
+            label:"Density",
+            hasValue:false,
+            units: [
+                {value:"kgm3", label:"Kilograms per cubic meter", hasValue:false}
+            ],
+            defUnit:"kgm3"
+        },
+        {
+            value:"eff_rad",
+            label:"Effective Radiation",
+            hasValue:false,
+            units: [
+                {value:"roent", label:"Roentgen", hasValue:false},
+                {value:"sv", label:"Sievert", hasValue:false},
+                {value:"svph", label:"SieVert per Hour", hasValue:false}
+            ],
+            defUnit:""
+        },
+        {
+            value:"force",
+            label:"Force",
+            hasValue:false,
+            units: [
+                {value:"null1", label:"Newtons", hasValue:false},
+                {value:"force", label:"Metric", hasValue:false}
+            ],
+            defUnit:"null1"
+        },
+        {
+            value:"freq",
+            label:"Frequency",
+            hasValue:false,
+            units: [
+                {value:"hz", label:"Hertz", hasValue:false}
+            ],
+            defUnit:"hz"
+        },
+        {
+            value:"gas",
+            label:"Gas",
+            hasValue:false,
+            units: [
+                {value:"pa", label:"Pascal", hasValue:false},
+                {value:"m3", label:"Cubic meters", hasValue:false},
+                {value:"kgm3", label:"Kilograms per cubic meter", hasValue:false}
+            ],
+            defUnit:"pa"
+        },
+        {
+            value:"glucose",
+            label:"Glucose",
+            hasValue:false,
+            units: [
+                {value:"mmol", label:"Millimoles/liter", hasValue:false},
+                {value:"mgdl", label:"Milligrams/deciliter", hasValue:false}
+            ],
+            defUnit:"mgdl"
+        },
+        {
+            value:"gps",
+            label:"GPS",
+            hasValue:false,
+            units: [
+                {value:"gps", label:"Global Positioning System", hasValue:false},
+                {value:"utm", label:"Universal Transverse Mercator", hasValue:false}
+            ],
+            defUnit:"gps"
+        },
+        {
+            value:"grav_x",
+            label:"Gravity.x axis",
+            hasValue:false,
+            units: [
+                {value:"nkg", label:"Newtons per kilogram", hasValue:false},
+                {value:"ms2", label:"Meters per second squared", hasValue:false}
+            ],
+            defUnit:"ms2"
+        },
+        {
+            value:"grav_y",
+            label:"Gravity.y axis",
+            hasValue:false,
+            units: [
+                {value:"nkg", label:"Newtons per kilogram", hasValue:false},
+                {value:"ms2", label:"Meters per second squared", hasValue:false}
+            ],
+            defUnit:"ms2"
+        },
+        {
+            value:"grav_z",
+            label:"Gravity.z axis",
+            hasValue:false,
+            units: [
+                {value:"nkg", label:"Newtons per kilogram", hasValue:false},
+                {value:"ms2", label:"Meters per second squared", hasValue:false}
+            ],
+            defUnit:"ms2"
+        },
+        {
+            value:"gyro_x",
+            label:"Gyroscope.rate of rotation around x axis",
+            hasValue:false,
+            units: [
+                {value:"rot", label:"Rotation speed", hasValue:false},
+                {value:"mps2", label:"Meters per second squared", hasValue:false}
+            ],
+            defUnit:"rot"
+        },
+        {
+            value:"gyro_y",
+            label:"Gyroscope.rate of rotation around y axis",
+            hasValue:false,
+            units: [
+                {value:"rot", label:"Rotation speed", hasValue:false},
+                {value:"mps2", label:"Meters per second squared", hasValue:false}
+            ],
+            defUnit:"rot"
+        },
+        {
+            value:"gyro_z",
+            label:"Gyroscope.rate of rotation around z axis",
+            hasValue:false,
+            units: [
+                {value:"rot", label:"Rotation speed", hasValue:false},
+                {value:"mps2", label:"Meters per second squared", hasValue:false}
+            ],
+            defUnit:"rot"
+        },
+        {
+            value:"hvac_hum",
+            label:"HVAC.Humdity",
+            hasValue:false,
+            units: [
+                {value:"p", label:"% (0 to 100)", hasValue:false}
+            ],
+            defUnit:"p"
+        },
+        {
+            value:"image",
+            label:"Image",
+            hasValue:false,
+            units: [
+                {value:"null", label:"Byte Array", hasValue:false}
+            ],
+            defUnit:"null"
+        },
+        {
+            value:"imped",
+            label:"Impedance",
+            hasValue:false,
+            units: [
+                {value:"ohm", label:"Ohm", hasValue:false}
+            ],
+            defUnit:"ohm"
+        },
+        {
+            value:"induct",
+            label:"Inductance",
+            hasValue:false,
+            units: [
+                {value:"h", label:"Henry", hasValue:false}
+            ],
+            defUnit:"h"
+        },
+        {
+            value:"ink_blk",
+            label:"Ink Levels.Black",
+            hasValue:false,
+            units: [
+                {value:"p", label:"% (0 to 100)", hasValue:false}
+            ],
+            defUnit:"p"
+        },
+        {
+            value:"ink_cya",
+            label:"Ink Levels.Cyan",
+            hasValue:false,
+            units: [
+                {value:"p", label:"% (0 to 100)", hasValue:false}
+            ],
+            defUnit:"p"
+        },
+        {
+            value:"ink_mag",
+            label:"Ink Levels.Magenta",
+            hasValue:false,
+            units: [
+                {value:"p", label:"% (0 to 100)", hasValue:false}
+            ],
+            defUnit:"p"
+        },
+        {
+            value:"ink_yel",
+            label:"Ink Levels.Yellow",
+            hasValue:false,
+            units: [
+                {value:"p", label:"% (0 to 100)", hasValue:false}
+            ],
+            defUnit:"p"
         },
         {
             value:"intrusion",
             label:"Intrusion",
             hasValue:false,
             units: [
-                {value:"d",         label:"Digital (0/1)", hasValue:false}
+                {value:"d", label:"Digital (0/1)", hasValue:false}
             ],
             defUnit:"d"
         },
         {
-            value:"lighting_sense",
-            label:"Lighting",           
+            value:"ion_rad",
+            label:"Ionizing Radiation",
             hasValue:false,
             units: [
-                {value:"p",         label:"% (0 to 100)", hasValue:false},
-                {value:"lux",       label:"Lux", hasValue:false},
-                {value:"v",         label:"Volts", hasValue:false},
-                {value:"r",         label:"Ratio", hasValue:false}
+                {value:"ev", label:"Electron Volts", hasValue:false},
+                {value:"erg", label:"Ergs", hasValue:false},
+                {value:"j", label:"Joules", hasValue:false}
+            ],
+            defUnit:"ev"
+        },
+        {
+            value:"len",
+            label:"Length",
+            hasValue:false,
+            units: [
+                {value:"m", label:"Meter", hasValue:false},
+                {value:"d", label:"Digital (0/1)", hasValue:false},
+                {value:"null1", label:"Low/High", hasValue:false}
+            ],
+            defUnit:"m"
+        },
+        {
+            value:"lighting_sense",
+            label:"Lighting",
+            hasValue:false,
+            units: [
+                {value:"p", label:"% (0 to 100)", hasValue:false},
+                {value:"lux", label:"Lux", hasValue:false},
+                {value:"v", label:"Volts", hasValue:false},
+                {value:"r", label:"Ratio", hasValue:false}
             ],
             defUnit:"lux"
         },
         {
-            value:"lux",
-            label:"Luminosity",           
+            value:"lin_acc_x",
+            label:"Linear Acceleration.x axis",
             hasValue:false,
             units: [
-                {value:"p",         label:"% (0 to 100)", hasValue:false},
-                {value:"lux",       label:"Lux", hasValue:false},
-                {value:"v",         label:"Volts", hasValue:false},
-                {value:"r",         label:"Ratio", hasValue:false}
+                {value:"mps2", label:"Meters per second squared", hasValue:false}
+            ],
+            defUnit:"mps2"
+        },
+        {
+            value:"lin_acc_y",
+            label:"Linear Acceleration.y axis",
+            hasValue:false,
+            units: [
+                {value:"mps2", label:"Meters per second squared", hasValue:false}
+            ],
+            defUnit:"mps2"
+        },
+        {
+            value:"lin_acc_z",
+            label:"Linear Acceleration.z axis",
+            hasValue:false,
+            units: [
+                {value:"mps2", label:"Meters per second squared", hasValue:false}
+            ],
+            defUnit:"mps2"
+        },
+        {
+            value:"liquid",
+            label:"Liquid",
+            hasValue:false,
+            units: [
+                {value:"l", label:"Liter", hasValue:false},
+                {value:"gal", label:"Gallon", hasValue:false},
+                {value:"oz", label:"Ounce", hasValue:false},
+                {value:"cc", label:"Cubic centimeter", hasValue:false}
+            ],
+            defUnit:"l"
+        },
+        {
+            value:"loc_lat",
+            label:"Location.Latitude",
+            hasValue:false,
+            units: [
+                {value:"lat", label:"Latitude", hasValue:false}
+            ],
+            defUnit:"lat"
+        },
+        {
+            value:"loc_lon",
+            label:"Location.Longitude",
+            hasValue:false,
+            units: [
+                {value:"long", label:"Longitude", hasValue:false}
+            ],
+            defUnit:"long"
+        },
+        {
+            value:"lum",
+            label:"Luminosity",
+            hasValue:false,
+            units: [
+                {value:"lux", label:"Lux", hasValue:false},
+                {value:"v", label:"Volts", hasValue:false},
+                {value:"p", label:"% (0 to 100)", hasValue:false},
+                {value:"r", label:"Ratio", hasValue:false}
             ],
             defUnit:"lux"
+        },
+        {
+            value:"mag_str",
+            label:"Magnetic field strength H",
+            hasValue:false,
+            units: [
+                {value:"ampm", label:"Amperes per meter", hasValue:false}
+            ],
+            defUnit:"ampm"
+        },
+        {
+            value:"mag_x",
+            label:"Magnetic field.x axis",
+            hasValue:false,
+            units: [
+                {value:"tesla", label:"Tesla", hasValue:false}
+            ],
+            defUnit:"tesla"
+        },
+        {
+            value:"mag_y",
+            label:"Magnetic field.y axis",
+            hasValue:false,
+            units: [
+                {value:"tesla", label:"Tesla", hasValue:false}
+            ],
+            defUnit:"tesla"
+        },
+        {
+            value:"mag_z",
+            label:"Magnetic field.z axis",
+            hasValue:false,
+            units: [
+                {value:"tesla", label:"Tesla", hasValue:false}
+            ],
+            defUnit:"tesla"
+        },
+        {
+            value:"mag_flux",
+            label:"Magnetic flux density B",
+            hasValue:false,
+            units: [
+                {value:"nma", label:"Newton-meters per ampere", hasValue:false}
+            ],
+            defUnit:"nma"
+        },
+        {
+            value:"mass",
+            label:"Mass",
+            hasValue:false,
+            units: [
+                {value:"kg", label:"Kilogram", hasValue:false}
+            ],
+            defUnit:"kg"
+        },
+        {
+            value:"mem",
+            label:"Memory",
+            hasValue:false,
+            units: [
+                {value:"kb", label:"Kilobytes", hasValue:false},
+                {value:"mb", label:"Megabytes", hasValue:false},
+                {value:"p", label:"% (0 to 100)", hasValue:false}
+            ],
+            defUnit:"mb"
         },
         {
             value:"motion",
             label:"Motion",
             hasValue:false,
             units: [
-                {value:"d",         label:"Digital (0/1)", hasValue:false}
+                {value:"d", label:"Digital (0/1)", hasValue:false}
             ],
             defUnit:"d"
+        },
+        {
+            value:"oil",
+            label:"Oil",
+            hasValue:false,
+            units: [
+                {value:"bbl", label:"Oil Barrel", hasValue:false},
+                {value:"gal", label:"gallon", hasValue:false},
+                {value:"l", label:"liter", hasValue:false}
+            ],
+            defUnit:"gal"
+        },
+        {
+            value:"ori_azim",
+            label:"Orientation.Azimuth",
+            hasValue:false,
+            units: [
+                {value:"deg", label:"Degree Angle", hasValue:false}
+            ],
+            defUnit:"deg"
+        },
+        {
+            value:"ori_pitch",
+            label:"Orientation.Pitch",
+            hasValue:false,
+            units: [
+                {value:"deg", label:"Degree Angle", hasValue:false}
+            ],
+            defUnit:"deg"
+        },
+        {
+            value:"ori_roll",
+            label:"Orientation.Roll",
+            hasValue:false,
+            units: [
+                {value:"deg", label:"Degree Angle", hasValue:false}
+            ],
+            defUnit:"deg"
+        },
+        {
+            value:"acid",
+            label:"pH-Acidity",
+            hasValue:false,
+            units: [
+                {value:"acid", label:"Acidity", hasValue:false}
+            ],
+            defUnit:"acid"
+        },
+        {
+            value:"pow",
+            label:"Power",
+            hasValue:false,
+            units: [
+                {value:"w", label:"Watts", hasValue:false}
+            ],
+            defUnit:"w"
+        },
+        {
+            value:"no2",
+            label:"Pollution.Nitrogen",
+            hasValue:false,
+            units: [
+                {value:"no2", label:"Nitrogen dioxide", hasValue:false}
+            ],
+            defUnit:"no2"
+        },
+        {
+            value:"o3",
+            label:"Pollution.Ozone",
+            hasValue:false,
+            units: [
+                {value:"o3", label:"Ozone", hasValue:false}
+            ],
+            defUnit:"o3"
+        },
+        {
+            value:"press",
+            label:"Pressure",
+            hasValue:false,
+            units: [
+                {value:"pa", label:"Pascal", hasValue:false},
+                {value:"hpa", label:"Hecto Pascal", hasValue:false},
+                {value:"bar", label:"Bar", hasValue:false},
+                {value:"at", label:"Technical atmosphere", hasValue:false},
+                {value:"atm", label:"Standard atmosphere", hasValue:false},
+                {value:"torr", label:"Torr", hasValue:false},
+                {value:"psi", label:"Pounds per square inch", hasValue:false}
+            ],
+            defUnit:"pa"
+        },
+        {
+            value:"prox",
+            label:"Proximity",
+            hasValue:false,
+            units: [
+                {value:"cm", label:"Centimeter", hasValue:false},
+                {value:"d", label:"Digital (0/1)", hasValue:false}
+            ],
+            defUnit:"cm"
+        },
+        {
+            value:"rad",
+            label:"Radioactivity",
+            hasValue:false,
+            units: [
+                {value:"bq", label:"Becquerel", hasValue:false},
+                {value:"ci", label:"Curie", hasValue:false}
+            ],
+            defUnit:"ci"
+        },
+        {
+            value:"expo_rad",
+            label:"Radiation Exposure",
+            hasValue:false,
+            units: [
+                {value:"roent", label:"Roentgen", hasValue:false},
+                {value:"ckg", label:"Coulomb/Kilogram", hasValue:false}
+            ],
+            defUnit:"roent"
         },
         {
             value:"rel_hum",
             label:"Relative Humidity",
             hasValue:false,
             units: [
-                {value:"rel_hum",   label:"Relative Humidity", hasValue:false}
+                {value:"rel_hum", label:"Relative Humidity", hasValue:false}
             ],
             defUnit:"rel_hum"
+        },
+        {
+            value:"res",
+            label:"Resistance",
+            hasValue:false,
+            units: [
+                {value:"ohm", label:"Ohm", hasValue:false}
+            ],
+            defUnit:"ohm"
+        },
+        {
+            value:"rot",
+            label:"Rotation",
+            hasValue:false,
+            units: [
+                {value:"rpm", label:"Revolutions per minute", hasValue:false},
+                {value:"rpms", label:"Revolutions per second", hasValue:false},
+                {value:"radianps", label:"Radians per second", hasValue:false}
+            ],
+            defUnit:"rpms"
+        },
+        {
+            value:"rot_scal",
+            label:"Rotation Vector.scalar",
+            hasValue:false,
+            units: [
+                {value:"null", label:"Cos(0/2)", hasValue:false}
+            ],
+            defUnit:"null"
+        },
+        {
+            value:"rot_x",
+            label:"Rotation Vector.x axis",
+            hasValue:false,
+            units: [
+                {value:"null", label:"X * sin (0/2)", hasValue:false}
+            ],
+            defUnit:"null"
+        },
+        {
+            value:"rot_y",
+            label:"Rotation Vector.y axis",
+            hasValue:false,
+            units: [
+                {value:"null", label:"Y * sin (0/2)", hasValue:false}
+            ],
+            defUnit:"null"
+        },
+        {
+            value:"rot_z",
+            label:"Rotation Vector.z axis",
+            hasValue:false,
+            units: [
+                {value:"null", label:"Z * sin (0/2)", hasValue:false}
+            ],
+            defUnit:"null"
+        },
+        {
+            value:"seis",
+            label:"Seismometer",
+            hasValue:false,
+            units: [
+                {value:"micps", label:"Microns (micrometers) /second,", hasValue:false},
+                {value:"v", label:"Volts", hasValue:false},
+                {value:"cmhz", label:"Spectral Amplitude", hasValue:false}
+            ],
+            defUnit:"v"
+        },
+        {
+            value:"sig_str",
+            label:"Signal Strength",
+            hasValue:false,
+            units: [
+                {value:"dbm", label:"Decibels per milliwatt", hasValue:false}
+            ],
+            defUnit:"dbm"
+        },
+        {
+            value:"smoke",
+            label:"Smoke",
+            hasValue:false,
+            units: [
+                {value:"p", label:"% (0 to 100)", hasValue:false},
+                {value:"pz", label:"Photodiode", hasValue:false},
+                {value:"kev", label:"Kiloelectron Volts", hasValue:false}
+            ],
+            defUnit:"kev"
+        },
+        {
+            value:"solid_vol",
+            label:"Solid Volume",
+            hasValue:false,
+            units: [
+                {value:"m3", label:"Cubic meter", hasValue:false}
+            ],
+            defUnit:"m3"
+        },
+        {
+            value:"sound",
+            label:"Sound",
+            hasValue:false,
+            units: [
+                {value:"dbm", label:"Decibels per milliwatt", hasValue:false}
+            ],
+            defUnit:"dbm"
+        },
+        {
+            value:"spec_hum",
+            label:"Specific Humidity",
+            hasValue:false,
+            units: [
+                {value:"gkg", label:"Grams/Kilograms", hasValue:false}
+            ],
+            defUnit:"gkg"
+        },
+        {
+            value:"speed",
+            label:"Speed",
+            hasValue:false,
+            units: [
+                {value:"kmh", label:"Kilometer per hour", hasValue:false},
+                {value:"mph", label:"Miles per hour", hasValue:false}
+            ],
+            defUnit:"mph"
+        },
+        {
+            value:"steps",
+            label:"Steps",
+            hasValue:false,
+            units: [
+                {value:"null", label:"Steps", hasValue:false}
+            ],
+            defUnit:"null"
+        },
+        {
+            value:"storage",
+            label:"Storage",
+            hasValue:false,
+            units: [
+                {value:"byte", label:"Bytes", hasValue:false},
+                {value:"kb", label:"Kilobytes", hasValue:false},
+                {value:"mb", label:"Megabytes", hasValue:false},
+                {value:"gb", label:"Gigabytes", hasValue:false},
+                {value:"tb", label:"Terabytes", hasValue:false}
+            ],
+            defUnit:"mb"
+        },
+        {
+            value:"stress",
+            label:"Stress",
+            hasValue:false,
+            units: [
+                {value:"pa", label:"Pascal", hasValue:false},
+                {value:"hpa", label:"Hecto Pascal", hasValue:false},
+                {value:"psi", label:"Pounds per square inch", hasValue:false}
+            ],
+            defUnit:"hpa"
         },
         {
             value:"temp",
             label:"Temperature",
             hasValue:false,
             units: [
-                {value:"f",         label:"Fahrenheit", hasValue:false},
-                {value:"c",         label:"Celsius", hasValue:false},
-                {value:"k",         label:"Kelvin", hasValue:false},
-                {value:"v",         label:"Volts", hasValue:false},
-                {value:"p",         label:"% (0 to 100)", hasValue:false},
-                {value:"r",         label:"Ratio", hasValue:false}
+                {value:"f", label:"Fahrenheit", hasValue:false},
+                {value:"c", label:"Celsius", hasValue:false},
+                {value:"k", label:"Kelvin", hasValue:false},
+                {value:"v", label:"Volts", hasValue:false},
+                {value:"p", label:"% (0 to 100)", hasValue:false},
+                {value:"r", label:"Ratio", hasValue:false}
             ],
             defUnit:"c"
+        },
+        {
+            value:"time",
+            label:"Time",
+            hasValue:false,
+            units: [
+                {value:"sec", label:"Second", hasValue:false},
+                {value:"msec", label:"Milliseconds", hasValue:false},
+                {value:"min", label:"minute", hasValue:false},
+                {value:"hour", label:"hour", hasValue:false},
+                {value:"day", label:"day", hasValue:false},
+                {value:"month", label:"month", hasValue:false},
+                {value:"year", label:"year", hasValue:false}
+            ],
+            defUnit:"sec"
+        },
+        {
+            value:"torq",
+            label:"Torque",
+            hasValue:false,
+            units: [
+                {value:"newtm", label:"Newton-meter", hasValue:false},
+                {value:"j", label:"Joule", hasValue:false}
+            ],
+            defUnit:"newtm"
+        },
+        {
+            value:"turb",
+            label:"Turbidity",
+            hasValue:false,
+            units: [
+                {value:"ntu", label:"Nephelometric Turbidity Unit", hasValue:false},
+                {value:"ftu", label:"Formazin Turbidity Unit", hasValue:false}
+            ],
+            defUnit:"ftu"
+        },
+        {
+            value:"ultra",
+            label:"Ultrasonic",
+            hasValue:false,
+            units: [
+                {value:"khz", label:"Kilohertz", hasValue:false}
+            ],
+            defUnit:"khz"
+        },
+        {
+            value:"velo",
+            label:"Velocity",
+            hasValue:false,
+            units: [
+                {value:"mps", label:"Meters per second squared", hasValue:false}
+            ],
+            defUnit:"mps"
+        },
+        {
+            value:"visco",
+            label:"Viscosity",
+            hasValue:false,
+            units: [
+                {value:"mpas", label:"Millipascal-second", hasValue:false}
+            ],
+            defUnit:"mpas"
+        },
+        {
+            value:"voltage",
+            label:"Voltage",
+            hasValue:false,
+            units: [
+                {value:"v", label:"Volts", hasValue:false}
+            ],
+            defUnit:"v"
+        },
+        {
+            value:"vol",
+            label:"Volume",
+            hasValue:false,
+            units: [
+                {value:"m3", label:"Cubic meter", hasValue:false}
+            ],
+            defUnit:"m3"
+        },
+        {
+            value:"h20",
+            label:"Water",
+            hasValue:false,
+            units: [
+                {value:"gpm", label:"Gallons per minute", hasValue:false},
+                {value:"cfs", label:"Cubic feet per second", hasValue:false}
+            ],
+            defUnit:"gpm"
+        },
+        {
+            value:"wave",
+            label:"Wavelength",
+            hasValue:false,
+            units: [
+                {value:"m", label:"Meters", hasValue:false}
+            ],
+            defUnit:"m"
+        },
+        {
+            value:"weight",
+            label:"Weight",
+            hasValue:false,
+            units: [
+                {value:"lbs", label:"Pounds", hasValue:false},
+                {value:"kg", label:"Kilogram", hasValue:false}
+            ],
+            defUnit:"lbs"
         }
     ]
-
-    function getSensorTypes() {
-        return sensorTypes
-    }
-
-    function findSensorDataUnit(datatype) {
-        console.log("findSensorDataUnit(global): datatype =", datatype)
-
-        for (i = 0, len = sensorTypes.length; i < len; i++) { 
-            console.log("findSensorDataUnit(global): datatypes[i] =", sensorTypes[i])
-            if (datatype == sensorTypes[i].value) {
-                return sensorTypes[i]
-            }
-        }
-
-        console.log("findSensorDataUnit(global): datatype not found!")
-
-        return sensorTypes[0]
-    }
 </script>
